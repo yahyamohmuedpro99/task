@@ -1,12 +1,15 @@
 {
   "name": "hr-system",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "HR System with NestJS and React",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "backend": "cd backend && npm run start:dev",
+    "frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "create:admin": "curl -X POST http://localhost:4000/auth/employees -H \"Content-Type: application/json\" -d '{\"name\": \"HR Admin\", \"email\": \"admin@hr.com\", \"password\": \"password123\", \"group\": \"HR\"}'"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": ""
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
 }
