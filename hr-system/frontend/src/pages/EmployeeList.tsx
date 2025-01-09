@@ -9,19 +9,27 @@ import {
   Select,
   Box,
   Stack,
+  Badge,
+  Loader,
+  ActionIcon,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { DateInput } from '@mantine/dates';
+import { IconRefresh } from '@tabler/icons-react';
 import { employeeApi } from '../lib/api';
-import { Employee, EmployeeGroup, CreateEmployeeData, CreateAttendanceData } from '../types';
+import { Employee, EmployeeGroup, CreateEmployeeData, CreateAttendanceData, Attendance } from '../types';
 
 export function EmployeeList() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [newEmployeeOpened, { open: openNewEmployee, close: closeNewEmployee }] = useDisclosure(false);
   const [attendanceOpened, { open: openAttendance, close: closeAttendance }] = useDisclosure(false);
+  const [attendanceHistoryOpened, { open: openAttendanceHistory, close: closeAttendanceHistory }] = useDisclosure(false);
+  const [selectedAttendances, setSelectedAttendances] = useState<Attendance[]>([]);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
 
   const newEmployeeForm = useForm<CreateEmployeeData>({
     initialValues: {
@@ -49,15 +57,20 @@ export function EmployeeList() {
   }, []);
 
   const loadEmployees = async () => {
+    setLoading(true);
+    setError('');
     try {
       const data = await employeeApi.getAll();
       setEmployees(data);
     } catch (err) {
       setError('Failed to load employees');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCreateEmployee = async (values: CreateEmployeeData) => {
+    setError('');
     try {
       await employeeApi.create(values);
       closeNewEmployee();
@@ -69,16 +82,22 @@ export function EmployeeList() {
   };
 
   const handleCreateAttendance = async (values: CreateAttendanceData) => {
+    setError('');
     try {
       await employeeApi.createAttendance(values);
       closeAttendance();
       attendanceForm.reset();
+      // Refresh attendance history if modal is open
+      if (selectedEmployee && attendanceHistoryOpened) {
+        await loadAttendanceHistory(selectedEmployee);
+      }
     } catch (err) {
       setError('Failed to create attendance');
     }
   };
 
-  const handleAttendanceClick = (employee: Employee) => {
+  const handleAddAttendanceClick = (employee: Employee, e: React.MouseEvent) => {
+    e.stopPropagation();
     setSelectedEmployee(employee);
     attendanceForm.setValues({
       employeeId: employee.id,
@@ -87,13 +106,43 @@ export function EmployeeList() {
     openAttendance();
   };
 
+  const loadAttendanceHistory = async (employee: Employee) => {
+    setLoadingAttendance(true);
+    setError('');
+    try {
+      const attendances = await employeeApi.getAttendance(employee.id);
+      // Sort by date descending
+      const sortedAttendances = [...attendances].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+      setSelectedAttendances(sortedAttendances);
+      openAttendanceHistory();
+    } catch (err) {
+      setError('Failed to load attendance history');
+    } finally {
+      setLoadingAttendance(false);
+    }
+  };
+
   return (
     <Stack>
       <Group justify="space-between">
-        <Text size="xl" fw={700}>
-          Employees
-        </Text>
-        <Button onClick={openNewEmployee}>Add Employee</Button>
+        <Group>
+          <Text size="xl" fw={700}>
+            Employees
+          </Text>
+          {loading && <Loader size="sm" />}
+        </Group>
+        <Group>
+          <ActionIcon 
+            variant="light" 
+            onClick={loadEmployees}
+            loading={loading}
+          >
+            <IconRefresh size={16} />
+          </ActionIcon>
+          <Button onClick={openNewEmployee}>Add Employee</Button>
+        </Group>
       </Group>
 
       {error && (
@@ -113,18 +162,40 @@ export function EmployeeList() {
         </Table.Thead>
         <Table.Tbody>
           {employees.map((employee) => (
-            <Table.Tr key={employee.id}>
+            <Table.Tr 
+              key={employee.id}
+              style={{ cursor: 'pointer' }}
+              onClick={() => loadAttendanceHistory(employee)}
+            >
               <Table.Td>{employee.name}</Table.Td>
               <Table.Td>{employee.email}</Table.Td>
-              <Table.Td>{employee.group}</Table.Td>
               <Table.Td>
-                <Button
-                  variant="light"
-                  size="xs"
-                  onClick={() => handleAttendanceClick(employee)}
+                <Badge 
+                  color={employee.group === EmployeeGroup.HR ? 'blue' : 'gray'}
                 >
-                  Add Attendance
-                </Button>
+                  {employee.group}
+                </Badge>
+              </Table.Td>
+              <Table.Td>
+                <Group>
+                  <Button
+                    variant="light"
+                    size="xs"
+                    onClick={(e) => handleAddAttendanceClick(employee, e)}
+                  >
+                    Add Attendance
+                  </Button>
+                  <Button
+                    variant="subtle"
+                    size="xs"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      loadAttendanceHistory(employee);
+                    }}
+                  >
+                    View History
+                  </Button>
+                </Group>
               </Table.Td>
             </Table.Tr>
           ))}
@@ -186,6 +257,57 @@ export function EmployeeList() {
             Add Attendance
           </Button>
         </Box>
+      </Modal>
+
+      <Modal
+        opened={attendanceHistoryOpened}
+        onClose={closeAttendanceHistory}
+        title={`Attendance History - ${selectedEmployee?.name}`}
+        size="lg"
+      >
+        <Stack>
+          <Group justify="flex-end">
+            <ActionIcon
+              variant="light"
+              onClick={() => selectedEmployee && loadAttendanceHistory(selectedEmployee)}
+              loading={loadingAttendance}
+            >
+              <IconRefresh size={16} />
+            </ActionIcon>
+          </Group>
+
+          {loadingAttendance ? (
+            <Box ta="center" py="xl">
+              <Loader />
+            </Box>
+          ) : (
+            <Table>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Date</Table.Th>
+                  <Table.Th>Created At</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {selectedAttendances.map((attendance) => (
+                  <Table.Tr key={attendance.id}>
+                    <Table.Td>{new Date(attendance.date).toLocaleDateString()}</Table.Td>
+                    <Table.Td>{new Date(attendance.createdAt).toLocaleString()}</Table.Td>
+                  </Table.Tr>
+                ))}
+                {selectedAttendances.length === 0 && (
+                  <Table.Tr>
+                    <Table.Td colSpan={2}>
+                      <Text ta="center" c="dimmed">
+                        No attendance records found
+                      </Text>
+                    </Table.Td>
+                  </Table.Tr>
+                )}
+              </Table.Tbody>
+            </Table>
+          )}
+        </Stack>
       </Modal>
     </Stack>
   );

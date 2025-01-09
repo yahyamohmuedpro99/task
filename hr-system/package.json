@@ -7,7 +7,9 @@
     "backend": "cd backend && npm run start:dev",
     "frontend": "cd frontend && npm run dev",
     "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
-    "create:admin": "curl -X POST http://localhost:4000/auth/employees -H \"Content-Type: application/json\" -d '{\"name\": \"HR Admin\", \"email\": \"admin@hr.com\", \"password\": \"password123\", \"group\": \"HR\"}'"
+    "create:admin": "curl -X POST http://localhost:4000/auth/employees -H \"Content-Type: application/json\" -d '{\"name\": \"HR Admin\", \"email\": \"admin@hr.com\", \"password\": \"password123\", \"group\": \"HR\"}'",
+    "build": "cd backend && npm install && npm run build",
+    "start": "cd backend && npm run start:prod"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
