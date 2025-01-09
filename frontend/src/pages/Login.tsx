@@ -1,5 +1,5 @@
 import { useForm } from '@mantine/form';
-import { TextInput, Button, Paper, Title, Container, Text, Alert } from '@mantine/core';
+import { TextInput, Button, Paper, Title, Container, Alert } from '@mantine/core';
 import { useAuth } from '../contexts/AuthContext';
 import { authApi } from '../lib/api';
 import { useState } from 'react';
