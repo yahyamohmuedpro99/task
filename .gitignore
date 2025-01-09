@@ -1,40 +1,12 @@
-# Node.js dependencies
 node_modules/
-npm-debug.log
-yarn-debug.log
-yarn-error.log
-
-# TypeScript compilation
+dist/
 build/
-
-# Environment files
 .env
-.env.* 
-
-# IDE files
-.vscode/
-.idea/
-
-# OS-specific files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 .DS_Store
-Thumbs.db
-
-# Jest test coverage
-coverage/
-
-# Next.js build output (if using it for SSR or static files)
-.next/
-
-# TypeORM or Sequelize migration files (optional, if using TypeORM)
-*.sql
-*.sqlite
-
-# Other files that might be generated in your dev or build process
-*.tgz
-*.log
-
-# Ignore LICENSE file
-LICENSE
-hr-system/backend/node_modules/
-hr-system/frontend/node_modules/
-

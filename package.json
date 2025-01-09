@@ -8,8 +8,9 @@
     "frontend": "cd frontend && npm run dev",
     "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
     "create:admin": "curl -X POST http://localhost:4000/auth/employees -H \"Content-Type: application/json\" -d '{\"name\": \"HR Admin\", \"email\": \"admin@hr.com\", \"password\": \"password123\", \"group\": \"HR\"}'",
-    "build": "cd backend && npm install && npm run build",
-    "start": "cd backend && npm run start:prod"
+    "build": "cd backend && npm install && npm run build && cd ../frontend && npm install && npm run build",
+    "start": "cd backend && npm run start:prod",
+    "postinstall": "npm run install:all"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
